@@ -1,0 +1,6 @@
+#!./run
+% Entry point for LIthp Lisp interpreter
+(
+	(import "src/parser")
+	(import "src/core")
+)

@@ -1,0 +1,3 @@
+(
+	(print (parse "(lambda (x) (cons x (cons x '())))"))
+)

@@ -1,0 +1,8 @@
+(
+	(def assertEqual #A,B,Message :: (
+		(if (!= A B) (
+			(throw (+ "Assertion error: " Message))
+		))
+	))
+	(export-global assertEqual/3)
+)

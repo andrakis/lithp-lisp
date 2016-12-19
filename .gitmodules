@@ -1,0 +1,3 @@
+[submodule "root-lisp"]
+	path = root-lisp
+	url = https://github.com/kvalle/root-lisp
