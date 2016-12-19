@@ -24,7 +24,6 @@
 
 	(def parse-inner #Exp,Rest :: (
 		(if (!= "" Rest) (
-			(print Rest)
 			(throw "Syntax Error: Expected EOF")
 		))
 		(if (== "'" (index Exp 0)) (
@@ -40,7 +39,6 @@
 
 	(def parse-inner-matching #Exp :: (
 		(map (split-exps (slice Exp 1 (find-matching-paren Exp))) #E :: (
-			(print E)
 			(parse E)
 		))
 	))
@@ -52,11 +50,12 @@
 	(def split-exps #Source :: (
 		(set Rest (trim Source))
 		(set Exps (list))
+		%(print (+ "split_exps(" Source ")"))
 		(while ((!= "" Rest)) (
 			(var InnerResult (partition-exp Rest))
+			%(print "  -> got " InnerResult)
 			(set Exps (++ Exps (list (index InnerResult 0))))
 			(set Rest (index InnerResult 1))
-			(print Exps Rest)
 		))
 		(Exps)
 	))
@@ -75,12 +74,16 @@
 	))
 
 	(def partition-exp-atom #ExpRest :: (
-		(print "  LIST " (list (+ "'" (index ExpRest 0)) (index ExpRest 1)))
+		%(print (+ "    partition_exp(" Source ") got '" (index ExpRest 0) ", ") (index ExpRest 1 "]"))
 		(list (+ "'" (index ExpRest 0)) (index ExpRest 1))
 	))
 	(def partition-exp-list #Last,Source :: (
-		(print "  LIST2 " (list (slice Source (- (+ Last 1))) (slice Source (+ Last 1))))
-		(list (slice Source (- (+ Last 1))) (slice Source (+ Last 1)))
+		%(print (+ "    partition_exp(" Source ") got list, returning: ["
+		%          (slice Source 0 Last) ", " (slice Source (+ 1 Last)) "]"))
+		%(print    "    last=" Last)
+		%(print    (+ "xxxxfirs='" (slice Source 0 (+ 1 Last)) "'"))
+		%(print    (+ "xxxxseco='" (slice Source (+ 1 Last)) "'"))
+		(list (slice Source 0 (+ 1 Last)) (slice Source (+ 1 Last)))
 	))
 	(def partition-exp-other #Match,Source :: (
 		(list (head Match) (slice Source (length (head Match))))
@@ -96,7 +99,7 @@
 		(while ((> OpenBrackets 0)) (
 			(set Pos (+ 1 Pos))
 			(if (== Pos (length Source)) (
-				(throw (+ "SyntaxError: unbalanced expression: " (splice Source Start)))
+				(throw (+ "SyntaxError: unbalanced expression: " (slice Source Start)))
 			))
 			(if (== "(" (index Source Pos)) (
 				(set OpenBrackets (+ 1 OpenBrackets))
@@ -109,10 +112,18 @@
 		(Pos)
 	))
 
-	(assertEqual (find-matching-paren "(Foo)") 4 "Test find-matching-paren/1")
-	%(print (parse "(quote a)"))
-	%(print (parse "(car '(a b c))"))
-
 	(export unparse/1 parse/1 parse-multiple/1)
 	(export split-exps/1 partition-exp/1 find-matching-paren/1)
+
+	(if (get-def 'TEST') (
+		(print (parse "(defun null (x) (eq x 'nil))"))
+		(print (parse "(defun caar (lst) (car (car lst)))"))
+		(assertEqual (find-matching-paren "(Foo)") 4 "Test find-matching-paren/1")
+		(print (parse "(quote a)"))
+		(print (parse "(car '(a b c))"))
+		(assertEqual (inspect (parse "(defun caar (lst) (car (car lst)))"))
+		             (inspect (list "defun" "caar" (list "lst")
+		                            (list "car" (list "car" "lst"))))
+		             "Test complex parsing")
+	))
 )

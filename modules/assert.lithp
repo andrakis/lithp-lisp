@@ -1,6 +1,10 @@
 (
 	(def assertEqual #A,B,Message :: (
 		(if (!= A B) (
+			(print "Assertion failed. First object:")
+			(print A)
+			(print "                  Second object:")
+			(print B)
 			(throw (+ "Assertion error: " Message))
 		))
 	))
