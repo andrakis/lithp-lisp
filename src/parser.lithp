@@ -51,10 +51,8 @@
 	(def split-exps #Source :: (
 		(set Rest (trim Source))
 		(set Exps (list))
-		%(print (+ "split_exps(" Source ")"))
 		(while ((!= "" Rest)) (
 			(var InnerResult (partition-exp Rest))
-			%(print "  -> got " InnerResult)
 			(set Exps (++ Exps (list (index InnerResult 0))))
 			(set Rest (index InnerResult 1))
 		))
@@ -75,15 +73,9 @@
 	))
 
 	(def partition-exp-short-list #ExpRest :: (
-		%(print (+ "    partition_exp(" Source ") got '" (index ExpRest 0) ", ") (index ExpRest 1 "]"))
 		(list (+ "'" (index ExpRest 0)) (index ExpRest 1))
 	))
 	(def partition-exp-list #Last,Source :: (
-		%(print (+ "    partition_exp(" Source ") got list, returning: ["
-		%          (slice Source 0 Last) ", " (slice Source (+ 1 Last)) "]"))
-		%(print    "    last=" Last)
-		%(print    (+ "xxxxfirs='" (slice Source 0 (+ 1 Last)) "'"))
-		%(print    (+ "xxxxseco='" (slice Source (+ 1 Last)) "'"))
 		(list (slice Source 0 (+ 1 Last)) (slice Source (+ 1 Last)))
 	))
 	(def partition-exp-other #Match,Source :: (

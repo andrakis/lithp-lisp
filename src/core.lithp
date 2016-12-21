@@ -1,3 +1,145 @@
 (
-	(print (parse "(defun caar (lst) (car (car lst)))"))
+	(import switch)
+
+	%(print (parse "(defun caar (lst) (car (car lst)))"))
+	(def interpret #Program :: ((interpret Program (list))))
+	(def interpret #Program,Env :: (
+		(unparse (eval (parse Program) Env))
+	))
+
+	(export-global interpret/1 interpret/2)
+
+	(def is-atom #Exp :: ((== string (typeof Exp))))
+
+	(var Builtins (list "quote" "atom" "eq" "car" "cdr" "cons" "cond" "defun" "label"))
+
+	(def eval #Exp,Env :: (
+		(if (is-atom Exp) (
+			(lookup Exp Env)
+		) (else (
+			(if (is-atom (index Exp 0)) (
+				(eval-builtin Builtins Exp Env)
+			) (else (
+				(eval-lambda-or-label Exp Env)
+			)))
+		)))
+	))
+
+	(def eval-builtin #BuiltinsList,Exp,Env :: (
+		(var Builtin (head BuiltinsList))
+		(var Tail (tail BuiltinsList))
+		(var Id (index Exp 0))
+		(if (== Id Builtin) (
+			% Call inbuilt
+			(call (get (+ "lilisp_" Id "/2")) Exp Env)
+		) (else (
+			(if (== 0 (length Tail)) (
+				(next call-named-fn Exp Env)
+			) (else (
+				(recurse eval-builtin (tail BuiltinsList) Exp Env)
+			)))
+		)))
+	))
+
+	(def eval-lambda-or-label #Exp,Env :: (
+		(var Id (index (index Exp 0) 0))
+		(if (== "lambda" Id) (
+			(next apply Exp Env)
+		) (else (
+			(if (== "label" Id) (
+				(next label Exp Env)
+			))
+		)))
+	))
+
+	(def lookup #Atom,Env :: (
+		(var Tuple (head Env))
+		(if (== list Tuple) (
+			(throw (+ "Could not find atom '" Atom "'"))
+		))
+		(if (== Atom (index Tuple 0)) (
+			(index Tuple 1)
+		) (else (
+			(recurse lookup Atom (tail Env))
+		)))
+	))
+
+	(def lilisp_quote #Exp :: ((next lilisp_quote Exp nil))) % alias to quote/2
+	(def lilisp_quote #Exp,Env :: ((index Exp 1)))
+
+	(def lilisp_atom #Exp,Env :: (
+		(var Val (eval (index Exp 1) Env))
+		(? (is-atom Val) "t" "f")
+	))
+
+	(def lilisp_eq #Exp,Env :: (
+		(var V1 (eval (index Exp 1) Env))
+		(var V2 (eval (index Exp 2) Env))
+		% TODO: Test how well this works
+		(? (and (== V1 V2) (is-atom V1)) "t" "f")
+	))
+
+	(def lilisp_car #Exp,Env :: (
+		(index (eval (index Exp 1) Env) 0)
+	))
+
+	(def lilisp_cdr #Exp,Env :: (
+		(var Lst (eval (index Exp 1) Env))
+		(if (== 1 (length Lst)) (
+			("nil")
+		) (else (
+			(slice Lst 1)
+		)))
+	))
+
+	(def lilisp_cons #Exp,Env :: (
+		(next lilisp_cons-inner (eval (index Exp 2) Env) Exp Env)
+	))
+
+	(def lilisp_cons-inner #Rest,Exp,Env :: (
+		(if (== "nil" Rest) (
+			(next lilisp_cons-inner (list) Exp Env)
+		) (else (
+			(invoke (list (eval (index Exp 1) Env)) concat Rest)
+		)))
+	))
+
+	(def lilisp_cond #Exp,Env :: (
+		% (cond (p1 e1) (p2 e2) ...)
+		(lilisp_cond-inner (slice Exp 1) Exp Env)
+	))
+
+	(def lilisp_cond-inner #Tuple,Exp,Env :: (
+		(if (== "t" (eval (index Tuple 0) Env)) (
+			(eval (index Tuple 1) Env)
+		))
+	))
+
+	(if (get-def 'TEST') (
+		(if true (
+		(print (interpret "(quote a)"))            % a
+		(print (interpret "'a"))                   % a
+		(print (interpret "'(a (b (c) d))"))       % (a (b (c) d))
+
+		(print (interpret "(atom 'a)"))            % t
+		(print (interpret "(atom '(a b c))"))      % f
+		(print (interpret "(atom '(atom 'a))"))    % f
+
+		(print (interpret "(eq 'a 'a)"))           % t
+		(print (interpret "(eq 'a 'b)"))           % f
+		(print (interpret "(eq '(a) '(a))"))       % f
+
+		(print (interpret "(car '(a b c))"))       % a
+		(print (interpret "(cdr '(a b c))"))       % (b c)
+		(print (interpret "(cdr '(a))"))           % nil
+		))
+
+		(print (interpret "(cons 'a '(b c))"))     % (a b c)
+		(print (interpret "(cons 'a 'nil)"))       % (a)
+
+	))
+
+	% TODO: Not working
+	% (print (interpret "(cond ((eq 'a 'b) 'first) ((atom 'a) 'second))"))
+
 )
