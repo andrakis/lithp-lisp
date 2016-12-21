@@ -1,0 +1,25 @@
+% Platform compatibility.
+%
+% Lithp 0.9.8 introduces the next/* builtin.
+% This module provides a Lithp equivalent, that is much slower.
+(
+	% Check for next/* builtin, provide workaround if not present
+	(def check-builtins # :: (
+		(try (
+			(next check-builtins-success 1 2 3)
+		) #E :: (
+			(def next/* #Args :: (
+				(var Name (atom (+ (head Args) "/" (length (tail Args)))))
+				(apply (get (get Name)) (tail Args))
+			))
+			(export next/*)
+			(atom false)
+		))
+	))
+
+	(def check-builtins-success/* # :: (
+		(atom true)
+	))
+
+	(check-builtins)
+)

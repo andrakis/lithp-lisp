@@ -1,6 +1,7 @@
 % Implements an AST parser / unparser for Lisp.
 (
 	(import assert)
+	(import "src/compat")
 
 	(def unparse #AST :: (
 		(if (== string (typeof AST)) (
@@ -15,11 +16,11 @@
 	))
 
 	(def parse #Source :: (
-		(parse-inner (partition-exp Source))
+		(next parse-inner (partition-exp Source))
 	))
 
 	(def parse-inner #Values :: (
-		(parse-inner (index Values 0) (index Values 1))
+		(next parse-inner (index Values 0) (index Values 1))
 	))
 
 	(def parse-inner #Exp,Rest :: (
@@ -30,7 +31,7 @@
 			(list "quote" (parse (slice Exp 1)))
 		) (else (
 			(if (== "(" (index Exp 0)) (
-				(parse-inner-matching Exp)
+				(next parse-inner-matching Exp)
 			) (else (
 				(Exp)
 			)))
@@ -63,17 +64,17 @@
 	(def partition-exp #Source :: (
 		(set Source (trim Source))
 		(if (== "'" (index Source 0)) (
-			(partition-exp-atom (partition-exp (slice Source 1)))
+			(next partition-exp-short-list (partition-exp (slice Source 1)))
 		) (else (
 			(if (== "(" (index Source 0)) (
-				(partition-exp-list (find-matching-paren Source) Source)
+				(next partition-exp-list (find-matching-paren Source) Source)
 			) (else (
-				(partition-exp-other (match Source "^[^\\s)']+") Source)
+				(next partition-exp-other (match Source "^[^\\s)']+") Source)
 			)))
 		)))
 	))
 
-	(def partition-exp-atom #ExpRest :: (
+	(def partition-exp-short-list #ExpRest :: (
 		%(print (+ "    partition_exp(" Source ") got '" (index ExpRest 0) ", ") (index ExpRest 1 "]"))
 		(list (+ "'" (index ExpRest 0)) (index ExpRest 1))
 	))
